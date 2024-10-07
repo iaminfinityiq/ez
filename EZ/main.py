@@ -9,7 +9,7 @@ def create_number(string):
             return Number(float(string))
     except ValueError:
          raise ConversionError(f"Cannot convert '{string}' to a number.")
-         
+
 def translate_boolean(string):
     match string:
         case "yes":
@@ -20,11 +20,11 @@ def translate_boolean(string):
             return "yes"
         case False:
             return "no"
-        
+
 def char_condition(snippet, i, char):
     if i == len(snippet):
         return False
-    
+
     return snippet[i] in char
 
 def get_args(snippet, original=[]):
@@ -34,21 +34,21 @@ def get_args(snippet, original=[]):
     arg = ""
     while char_condition(snippet, i, " "):
         i += 1
-    
+
     if i == len(snippet):
         return original
-    
+
     while char_condition(snippet.lower(), i, "abcdefghijklmnopqrstuvwxyz0123456789."):
         instruction += snippet[i]
         i += 1
-    
+
     if i == len(snippet):
-        return original       
-                            
+        return original
+
     nexter = snippet[i]
     if nexter == ":" and instruction not in ("number", "boolean", "nothing", "char", "unsemi"):
         return original + [run(instruction + ":" + snippet[i+1:], variables)]
-    
+
     if nexter == ":" and instruction == "char":
         arg = snippet[i+1]
         i += 1
@@ -61,22 +61,22 @@ def get_args(snippet, original=[]):
         if snippet[i] == ";":
             found_semi = True
             break
-        
+
         if not temp:
             arg += snippet[i]
 
         i += 1
-    
+
     if found_semi:
         return get_args(snippet[i+1:], original + [run(instruction + nexter + arg, variables)])
 
     return original + [run(instruction + nexter + arg, variables)]
-        
+
 def run(snippet, variables, original=False):
     i = 0
     while char_condition(snippet, i, " "):
         i += 1
-    
+
     if original and snippet[0] == "$":
         # comment
         return Nothing()
@@ -85,10 +85,10 @@ def run(snippet, variables, original=False):
     while char_condition(snippet.lower(), i, "abcdefghijklmnopqrstuvwxyz0123456789"):
         instruction += snippet[i]
         i += 1
-        
+
     while char_condition(snippet, i, " "):
         i += 1
-    
+
     if i == len(snippet):
         nexter = ""
     else:
@@ -99,100 +99,114 @@ def run(snippet, variables, original=False):
 
     match nexter:
         case " ":
-            # variables and stuff
-            var_name = instruction
-            keyword = ""
-            while char_condition(snippet.lower(), i, "abcdefghijklmjopqrstuvwxyz0123456789"):
-                keyword += snippet[i]
-                i += 1
+            # variables and stuff (if elif else condition)
+            if not original:
+                raise SyntaxError("Variables definition/if elif else statements in the wrong place!")
 
-            if keyword != "is":
-                raise SyntaxError("Invalid syntax! The keyword for defining a variable is: <var_name> is (now must if your variable is defined else no) <value>")
-             
-            while char_condition(snippet, i, " "):
-                i += 1
-            
-            if var_name in variables:
-                # must use now
+            if instruction == "if":
+                snip = snippet[i+1:]
+                conditions = get_args(snip)
+                if len(conditions) != 1:
+                    raise ArgumentError("Can't check 0 or multiple conditions at the same time!")
+                
+                condition = conditions[0]
+                if translate_boolean(condition.value):
+                    # perform the block below
+                    pass
+            else:
+                var_name = instruction
                 keyword = ""
-                while char_condition(snippet.lower(), i, "abcdefghijklmnopqrstuvwxyz0123456789"):
+                while char_condition(snippet.lower(), i, "abcdefghijklmjopqrstuvwxyz0123456789"):
                     keyword += snippet[i]
                     i += 1
-                
-                if keyword != "now":
-                    raise SyntaxError(f"Invalid syntax! Your variable was defined so the syntax is: <var_name> is now <value>")
-             
-            while char_condition(snippet, i, " "):
-                i += 1
-   
-            # value
-            if not snippet[i:]:
-                variables.update({var_name: Nothing()})
+
+                if keyword != "is":
+                    raise SyntaxError("Invalid syntax! The keyword for defining a variable is: <var_name> is (now must if your variable is defined else no) <value>")
+
+                while char_condition(snippet, i, " "):
+                    i += 1
+
+                if var_name in variables:
+                    # must use now
+                    keyword = ""
+                    while char_condition(snippet.lower(), i, "abcdefghijklmnopqrstuvwxyz0123456789"):
+                        keyword += snippet[i]
+                        i += 1
+
+                    if keyword != "now":
+                        raise SyntaxError(f"Invalid syntax! Your variable was defined so the syntax is: <var_name> is now <value>")
+
+                while char_condition(snippet, i, " "):
+                    i += 1
+
+                # value
+                if not snippet[i:]:
+                    variables.update({var_name: Nothing()})
+                    return Nothing()
+
+                args = get_args(snippet[i:])
+                value = args[0]
+                variables.update({var_name: value})
+
                 return Nothing()
-                
-            args = get_args(snippet[i:])
-            value = args[0]
-            variables.update({var_name: value})
-                                                                         
-            return Nothing()
         case ":":
             # instructions
             match instruction:
                 case "text":
                     if i == len(snippet) - 1:
                         return Text("")
-                        
+
                     argument = snippet[i+1:]
                     return Text(argument)
                 case "char":
                     if i == len(snippet) - 1:
                         return Char(" ")
-                    
+
                     argument = snippet[i+1:]
                     return Char(argument)
                 case "unsemi":
                     if i == len(snippet) - 1:
                         return Unsemi("")
-                    
+
                     argument = snippet[i+1:]
                     return Unsemi(argument)
                 case "number":
                     if i == len(snippet) - 1:
                         return Number(0)
-                    
+
                     argument = snippet[i+1:].strip()
                     return create_number(argument)
                 case "boolean":
                     if i == len(snippet) - 1:
                         return Boolean("no")
-                    
+
                     argument = snippet[i+1:].strip()
                     if argument not in ("yes", "no"):
                         raise TypeError(f"Cannot convert '{argument}' to a boolean.")
-                    
+
                     return Boolean(argument)
                 case "nothing":
                     if i == len(snippet) - 1:
                         return Nothing()
-                    
+
                     argument = snippet[i+1:].strip()
                     if argument:
                         raise ArgumentError("Expect 0 arguments in nothing.")
-                    
+
                     return Nothing()
                 case "show":
                     snip = snippet[i+1:]
                     arguments = get_args(snip)
                     for argument in arguments:
                         print(argument.value)
-                        
+
                     return Nothing()
                 case "ask":
                     snip = snippet[i+1:]
                     arguments = get_args(snip)
                     if len(arguments) != 1:
                         raise ArgumentError("Expect 1 argument in ask.")
-                        
+
                     return Text(input(arguments[0].value))
                 case "calculate":
                     argument = snippet[i+1:]
@@ -206,7 +220,7 @@ def run(snippet, variables, original=False):
                         if char in OPERATORS:
                             if current:
                                 tokens.append(current)
-                            
+
                             tokens.append(char)
                             current = ""
                         else:
@@ -221,9 +235,9 @@ def run(snippet, variables, original=False):
                         if token in OPERATORS:
                             new.append(token)
                             continue
-                        
+
                         new.append(run(token, variables))
-                    
+
                     # syntax checking + stack usage
                     prev = None
                     stack = []
@@ -251,7 +265,7 @@ def run(snippet, variables, original=False):
                         prev = token
                     if stack:
                         raise SyntaxError("Unclosed '('!")
-                    
+
                     ev = ""
                     for token in new:
                         if isinstance(token, Number):
@@ -260,7 +274,7 @@ def run(snippet, variables, original=False):
                             ev += "**"
                         else:
                             ev += token
-                    
+
                     return create_number(str(eval(ev)))
                 case "join":
                     snip = snippet[i+1:]
@@ -268,7 +282,7 @@ def run(snippet, variables, original=False):
                     string = ""
                     for argument in arguments:
                         string += str(argument.value)
-                    
+
                     return Text(string)
                 case "type":
                     snip = snippet[i+1:]
@@ -278,38 +292,38 @@ def run(snippet, variables, original=False):
 
                     if arguments == []:
                         return Type("nothing")
-                    
+
                     argument = arguments[0]
                     if isinstance(argument, Type):
                         return Type("type")
-                    
+
                     if isinstance(argument, Text):
                         return Type("text")
-                    
+
                     if isinstance(argument, Number):
                         return Type("number")
-                    
+
                     if isinstance(argument, Boolean):
                         return Type("boolean")
-                    
+
                     if isinstance(argument, Nothing):
                         return Type("nothing")
-                    
+
                     if isinstance(argument, Char):
                         return Type("char")
 
                     if isinstance(argument, Unsemi):
                         return Type("unsemi")
-                    
+
                 case "cnum":
                     snip = snippet[i+1:]
                     arguments = get_args(snip)
                     if len(arguments) > 1:
                         raise ArgumentError("Expect 0 or 1 argument(s)!")
-                    
+
                     if arguments == []:
                         return Number(0)
-                    
+
                     argument = arguments[0]
                     if isinstance(argument, Boolean):
                         match argument.value:
@@ -317,16 +331,17 @@ def run(snippet, variables, original=False):
                                 return Number(1)
                             case "no":
                                 return Number(0)
-                    
+
                     if isinstance(argument, Nothing):
                         return Number(0)
-                    
+
                     return create_number(argument.value)
                 case "ctext":
                     '''
                     Mode:
                     0: text
                     1: unsemi
+                    2: char
 
                     determined in the second arg
                     '''
@@ -334,23 +349,40 @@ def run(snippet, variables, original=False):
                     arguments = get_args(snip)
                     if len(arguments) != 2:
                         raise ArgumentError("Expect 2 arguments!")
-                    
+
                     value, mode = arguments[0], arguments[1]
                     match mode.value:
                         case 0:
                             return Text(value.value)
                         case 1:
                             return Unsemi(value.value)
+                        case 2:
+                            return Char(value.value)
                 case "cbool":
                     snip = snippet[i+1:]
                     arguments = get_args(snip)
-                    if len(arguments) == 1:
+                    if len(arguments) != 1:
                         raise ArgumentError("Expect 1 argument!")
-                    
+
                     # truthy + falsy value
                     argument = arguments[0]
+                    if isinstance(argument, Boolean):
+                        return argument
+
                     if isinstance(argument, Nothing):
-                        return 
+                        return Boolean("no")
+
+                    if isinstance(argument, Number):
+                        return Boolean(translate_boolean(argument.value != 0))
+
+                    if isinstance(argument, (Text, Unsemi)):
+                        return Boolean(translate_boolean(argument.value != ""))
+
+                    if isinstance(argument, Char):
+                        return Boolean("yes")
+
+                    if isinstance(argument, Type):
+                        return Boolean(translate_boolean(argument.value != "nothing"))
                 case _:
                     raise SyntaxError(f"Unexpected instruction '{instruction}'!")
         case "@":
@@ -360,10 +392,10 @@ def run(snippet, variables, original=False):
             while char_condition(snippet.lower(), i, "abcdefghijklmnopqrstuvwxyz0123456789"):
                 var_name += snippet[i]
                 i += 1
-            
+
             if var_name not in variables:
                 raise SyntaxError(f"Variable '{var_name}' not found!")
-            
+
             return variables[var_name]
         case _:
             raise SyntaxError(f"Expect ' ', ':', ';', '@', not '{nexter}'!")
@@ -379,5 +411,5 @@ if __name__ == "__main__":
     while line < len(lines):
         if lines[line].strip():
             run(lines[line], variables, True)
-            
+
         line += 1
