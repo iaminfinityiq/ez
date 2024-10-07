@@ -1,0 +1,7 @@
+a is number: 100
+b is number: 50
+
+show: join: unsemi:Gia tri cua a + b la ; calculate: @a + @b
+
+a is now number: 150
+show: join: unsemi:Gia tri cua a la ; @a
