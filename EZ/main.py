@@ -27,6 +27,12 @@ def char_condition(snippet, i, char):
 
     return snippet[i] in char
 
+def indent_condition(lines, i):
+    if i >= len(lines):
+        return False
+    
+    return lines[i].startswith(" " * 4)
+
 def get_args(snippet, original=[]):
     global variables
     instruction = ""
@@ -73,6 +79,10 @@ def get_args(snippet, original=[]):
     return original + [run(instruction + nexter + arg, variables)]
 
 def run(snippet, variables, original=False):
+    global line, lines
+    if original and snippet.startswith(" " * 4):
+        raise SyntaxError("Unexpected indent!")
+
     i = 0
     while char_condition(snippet, i, " "):
         i += 1
@@ -104,15 +114,35 @@ def run(snippet, variables, original=False):
                 raise SyntaxError("Variables definition/if elif else statements in the wrong place!")
 
             if instruction == "if":
-                snip = snippet[i+1:]
+                snip = snippet[i:]
                 conditions = get_args(snip)
                 if len(conditions) != 1:
                     raise ArgumentError("Can't check 0 or multiple conditions at the same time!")
                 
+                '''
+                Option 1: check for condition and perform the block
+                Option 2: store the block of conditions
+                i think i prefer option 1 because... doing option 1 seems easier and we don't have to go over again
+                but option 2 i think it's faster and can reuse in many more mechanics like functions and loops
+                '''
+
                 condition = conditions[0]
+                line += 1
                 if translate_boolean(condition.value):
                     # perform the block below
-                    pass
+                    while indent_condition(lines, line):
+                        if lines[line].strip():
+                            run(lines[line][4:], variables, True)
+
+                        line += 1
+                else:
+                    while indent_condition(lines, line):
+                        if not lines[line].strip():
+                            line += 1
+                            continue
+
+                        line += 1
+
             else:
                 var_name = instruction
                 keyword = ""
