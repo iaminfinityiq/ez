@@ -1,4 +1,8 @@
 if boolean: no
-    a is number: 123
-
-show: @a
+    show: text:if
+elif boolean: yes
+    if boolean: no
+    elif boolean: yes
+        show: text:vui
+elif boolean: yes
+    show: text:elif2
