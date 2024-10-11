@@ -27,11 +27,53 @@ def char_condition(snippet, i, char):
 
     return snippet[i] in char
 
-def indent_condition(lines, i):
+def indent_condition(lines, i, indentation):
     if i >= len(lines):
         return False
     
-    return lines[i].startswith(" " * 4)
+    if not lines[i].strip():
+        return True
+
+    return lines[i].startswith(" " * 4 * (indentation + 1))
+
+def skip_condition(lines, i, indentation):
+    if i >= len(lines):
+        return False
+    
+    if not lines[i].strip():
+        return True
+
+    instruction = ""
+    _ = 0
+    if lines[i].startswith(" " * 4 * (indentation + 1)):
+        return True
+
+    while char_condition(lines[i].lower(), _, "abcdefghijklmnopqrstuvwxyz0123456789"):
+        instruction += lines[i][_]
+        _ += 1
+    
+    if instruction in ("if", "elif"):
+        return True
+    
+    return False
+
+def next_condition(lines, i, indentation):
+    if i >= len(lines):
+        return False
+    
+    if not lines[i].strip():
+        return True
+
+    instruction = ""
+    _ = 0
+    if lines[i].startswith(" " * 4 * (indentation + 1)):
+        return True
+
+    while char_condition(lines[i].lower(), _, "abcdefghijklmnopqrstuvwxyz0123456789"):
+        instruction += lines[i][_]
+        _ += 1
+    
+    return False
 
 def get_args(snippet, original=[]):
     global variables
@@ -78,9 +120,9 @@ def get_args(snippet, original=[]):
 
     return original + [run(instruction + nexter + arg, variables)]
 
-def run(snippet, variables, original=False):
+def run(snippet, variables, original=False, indentation=0, in_if=False):
     global line, lines
-    if original and snippet.startswith(" " * 4):
+    if original and snippet.startswith(" " * 4 * (indentation + 1)):
         raise SyntaxError("Unexpected indent!")
 
     i = 0
@@ -114,6 +156,7 @@ def run(snippet, variables, original=False):
                 raise SyntaxError("Variables definition/if elif else statements in the wrong place!")
 
             if instruction == "if":
+                in_if = True
                 snip = snippet[i:]
                 conditions = get_args(snip)
                 if len(conditions) != 1:
@@ -130,19 +173,53 @@ def run(snippet, variables, original=False):
                 line += 1
                 if translate_boolean(condition.value):
                     # perform the block below
-                    while indent_condition(lines, line):
+                    while indent_condition(lines, line, indentation):
                         if lines[line].strip():
-                            run(lines[line][4:], variables, True)
+                            run(lines[line][4 * (indentation + 1):], variables, True, indentation+1)
 
                         line += 1
+                    
+                    while skip_condition(lines, line, indentation):
+                        line += 1
                 else:
-                    while indent_condition(lines, line):
+                    while next_condition(lines, line, indentation):
                         if not lines[line].strip():
                             line += 1
                             continue
 
                         line += 1
+                    
+                    run(lines[line], variables, True, indentation, in_if)
+            elif instruction == "elif":
+                if not in_if:
+                    raise SyntaxError("No parent if!")
+                
+                snip = snippet[i:]
+                conditions = get_args(snip)
+                if len(conditions) != 1:
+                    raise ArgumentError("Can't check 0 or multiple conditions at the same time!")
 
+                condition = conditions[0]
+                line += 1
+                if translate_boolean(condition.value):
+                    # perform the block below
+                    while indent_condition(lines, line, indentation):
+                        if lines[line].strip():
+                            run(lines[line][4 * (indentation + 1):], variables, True, indentation+1)
+
+                        line += 1
+                    
+                    while skip_condition(lines, line, indentation):
+                        line += 1
+                else:
+                    while next_condition(lines, line, indentation):
+                        if not lines[line].strip():
+                            line += 1
+                            continue
+
+                        line += 1
+                    
+                    run(lines[line], variables, True, indentation, in_if)
             else:
                 var_name = instruction
                 keyword = ""
