@@ -220,6 +220,8 @@ def run(snippet, variables, original=False, indentation=0, in_if=False):
                             line += 1
                         
                         run(lines[line], variables, True, indentation, in_if)
+                case "else":
+                    raise ArgumentError("Else does not have any condition!")
                 case _:
                     var_name = instruction
                     keyword = ""
