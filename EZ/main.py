@@ -51,8 +51,7 @@ def skip_condition(lines, i, indentation):
     while char_condition(lines[i].lower(), _, "abcdefghijklmnopqrstuvwxyz0123456789"):
         instruction += lines[i][_]
         _ += 1
-    
-    if instruction in ("if", "elif"):
+    if instruction in ("if", "elif", "else"):
         return True
     
     return False
@@ -155,107 +154,125 @@ def run(snippet, variables, original=False, indentation=0, in_if=False):
             if not original:
                 raise SyntaxError("Variables definition/if elif else statements in the wrong place!")
 
-            if instruction == "if":
-                in_if = True
-                snip = snippet[i:]
-                conditions = get_args(snip)
-                if len(conditions) != 1:
-                    raise ArgumentError("Can't check 0 or multiple conditions at the same time!")
-                
-                '''
-                Option 1: check for condition and perform the block
-                Option 2: store the block of conditions
-                i think i prefer option 1 because... doing option 1 seems easier and we don't have to go over again
-                but option 2 i think it's faster and can reuse in many more mechanics like functions and loops
-                '''
-
-                condition = conditions[0]
-                line += 1
-                if translate_boolean(condition.value):
-                    # perform the block below
-                    while indent_condition(lines, line, indentation):
-                        if lines[line].strip():
-                            run(lines[line][4 * (indentation + 1):], variables, True, indentation+1)
-
-                        line += 1
+            match instruction:
+                case "if":
+                    in_if = True
+                    snip = snippet[i:]
+                    conditions = get_args(snip)
+                    if len(conditions) != 1:
+                        raise ArgumentError("Can't check 0 or multiple conditions at the same time!")
                     
-                    while skip_condition(lines, line, indentation):
-                        line += 1
-                else:
-                    while next_condition(lines, line, indentation):
-                        if not lines[line].strip():
+                    '''
+                    Option 1: check for condition and perform the block
+                    Option 2: store the block of conditions
+                    i think i prefer option 1 because... doing option 1 seems easier and we don't have to go over again
+                    but option 2 i think it's faster and can reuse in many more mechanics like functions and loops
+                    '''
+
+                    condition = conditions[0]
+                    line += 1
+                    if translate_boolean(condition.value):
+                        # perform the block below
+                        while indent_condition(lines, line, indentation):
+                            if lines[line].strip():
+                                run(lines[line][4 * (indentation + 1):], variables, True, indentation+1)
+
                             line += 1
-                            continue
-
-                        line += 1
-                    
-                    run(lines[line], variables, True, indentation, in_if)
-            elif instruction == "elif":
-                if not in_if:
-                    raise SyntaxError("No parent if!")
-                
-                snip = snippet[i:]
-                conditions = get_args(snip)
-                if len(conditions) != 1:
-                    raise ArgumentError("Can't check 0 or multiple conditions at the same time!")
-
-                condition = conditions[0]
-                line += 1
-                if translate_boolean(condition.value):
-                    # perform the block below
-                    while indent_condition(lines, line, indentation):
-                        if lines[line].strip():
-                            run(lines[line][4 * (indentation + 1):], variables, True, indentation+1)
-
-                        line += 1
-                    
-                    while skip_condition(lines, line, indentation):
-                        line += 1
-                else:
-                    while next_condition(lines, line, indentation):
-                        if not lines[line].strip():
+                        
+                        while skip_condition(lines, line, indentation):
                             line += 1
-                            continue
+                    else:
+                        while next_condition(lines, line, indentation):
+                            if not lines[line].strip():
+                                line += 1
+                                continue
 
-                        line += 1
+                            line += 1
+                        
+                        run(lines[line], variables, True, indentation, in_if)
+                case "elif":
+                    if not in_if:
+                        raise SyntaxError("No parent if!")
                     
-                    run(lines[line], variables, True, indentation, in_if)
-            else:
-                var_name = instruction
-                keyword = ""
-                while char_condition(snippet.lower(), i, "abcdefghijklmjopqrstuvwxyz0123456789"):
-                    keyword += snippet[i]
-                    i += 1
+                    snip = snippet[i:]
+                    conditions = get_args(snip)
+                    if len(conditions) != 1:
+                        raise ArgumentError("Can't check 0 or multiple conditions at the same time!")
 
-                if keyword != "is":
-                    raise SyntaxError("Invalid syntax! The keyword for defining a variable is: <var_name> is (now must if your variable is defined else no) <value>")
+                    condition = conditions[0]
+                    line += 1
+                    if translate_boolean(condition.value):
+                        # perform the block below
+                        while indent_condition(lines, line, indentation):
+                            if lines[line].strip():
+                                run(lines[line][4 * (indentation + 1):], variables, True, indentation+1)
 
-                while char_condition(snippet, i, " "):
-                    i += 1
+                            line += 1
+                        
+                        while skip_condition(lines, line, indentation):
+                            line += 1
+                    else:
+                        while next_condition(lines, line, indentation):
+                            if not lines[line].strip():
+                                line += 1
+                                continue
 
-                if var_name in variables:
-                    # must use now
+                            line += 1
+                        
+                        run(lines[line], variables, True, indentation, in_if)
+                case _:
+                    var_name = instruction
                     keyword = ""
-                    while char_condition(snippet.lower(), i, "abcdefghijklmnopqrstuvwxyz0123456789"):
+                    while char_condition(snippet.lower(), i, "abcdefghijklmjopqrstuvwxyz0123456789"):
                         keyword += snippet[i]
                         i += 1
 
-                    if keyword != "now":
-                        raise SyntaxError(f"Invalid syntax! Your variable was defined so the syntax is: <var_name> is now <value>")
+                    if keyword != "is":
+                        raise SyntaxError("Invalid syntax! The keyword for defining a variable is: <var_name> is (now must if your variable is defined else no) <value>")
 
-                while char_condition(snippet, i, " "):
-                    i += 1
+                    while char_condition(snippet, i, " "):
+                        i += 1
 
-                # value
-                if not snippet[i:]:
-                    variables.update({var_name: Nothing()})
-                    return Nothing()
+                    if var_name in variables:
+                        # must use now
+                        keyword = ""
+                        while char_condition(snippet.lower(), i, "abcdefghijklmnopqrstuvwxyz0123456789"):
+                            keyword += snippet[i]
+                            i += 1
 
-                args = get_args(snippet[i:])
-                value = args[0]
-                variables.update({var_name: value})
+                        if keyword != "now":
+                            raise SyntaxError(f"Invalid syntax! Your variable was defined so the syntax is: <var_name> is now <value>")
 
-                return Nothing()
+                    while char_condition(snippet, i, " "):
+                        i += 1
+
+                    # value
+                    if not snippet[i:]:
+                        variables.update({var_name: Nothing()})
+                        return Nothing()
+
+                    args = get_args(snippet[i:])
+                    value = args[0]
+                    variables.update({var_name: value})
+        case "":
+            # especially for else!
+            if not in_if:
+                raise SyntaxError("No parent if!")
+            
+            in_if = False
+            snip = snippet[i:]
+            if snip:
+                raise ArgumentError("Else branch has no conditions!")
+            
+            line += 1
+            while indent_condition(lines, line, indentation):
+                if lines[line].strip():
+                    run(lines[line][4 * (indentation + 1):], variables, True, indentation+1)
+                
+                line += 1
+            
+            while skip_condition(lines, line, indentation):
+                line += 1
         case ":":
             # instructions
             match instruction:
