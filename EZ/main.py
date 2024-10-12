@@ -311,11 +311,9 @@ def run(snippet, variables, original=False, indentation=0, in_if=False):
 
                     return Boolean(argument)
                 case "nothing":
-                    if i == len(snippet) - 1:
-                        return Nothing()
-
-                    argument = snippet[i+1:].strip()
-                    if argument:
+                    snip = snippet[i+1:].strip()
+                    arguments = get_args(snip)
+                    if arguments:
                         raise ArgumentError("Expect 0 arguments in nothing.")
 
                     return Nothing()
