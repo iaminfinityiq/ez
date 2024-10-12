@@ -297,16 +297,15 @@ def run(snippet, variables, original=False, indentation=0, in_if=False):
                     argument = snippet[i+1:]
                     return Unsemi(argument)
                 case "number":
-                    if i == len(snippet) - 1:
-                        return Number(0)
-
                     argument = snippet[i+1:].strip()
+                    if not argument:
+                        return Number(0)
                     return create_number(argument)
                 case "boolean":
-                    if i == len(snippet) - 1:
-                        return Boolean("no")
-
                     argument = snippet[i+1:].strip()
+                    if not argument:
+                        return Boolean("no")
+                    
                     if argument not in ("yes", "no"):
                         raise ConversionError(f"Cannot convert '{argument}' to a boolean.")
 
