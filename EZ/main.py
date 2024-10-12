@@ -308,7 +308,7 @@ def run(snippet, variables, original=False, indentation=0, in_if=False):
 
                     argument = snippet[i+1:].strip()
                     if argument not in ("yes", "no"):
-                        raise TypeError(f"Cannot convert '{argument}' to a boolean.")
+                        raise ConversionError(f"Cannot convert '{argument}' to a boolean.")
 
                     return Boolean(argument)
                 case "nothing":
