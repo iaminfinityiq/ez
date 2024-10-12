@@ -48,7 +48,7 @@ def skip_condition(lines, i, indentation):
     if lines[i].startswith(" " * 4 * (indentation + 1)):
         return True
 
-    while char_condition(lines[i].lower(), _, "abcdefghijklmnopqrstuvwxyz0123456789"):
+    while char_condition(lines[i].lower(), _, "abcdefghijklmnopqrstuvwxyz0123456789_"):
         instruction += lines[i][_]
         _ += 1
     if instruction in ("if", "elif", "else"):
@@ -68,7 +68,7 @@ def next_condition(lines, i, indentation):
     if lines[i].startswith(" " * 4 * (indentation + 1)):
         return True
 
-    while char_condition(lines[i].lower(), _, "abcdefghijklmnopqrstuvwxyz0123456789"):
+    while char_condition(lines[i].lower(), _, "abcdefghijklmnopqrstuvwxyz0123456789_"):
         instruction += lines[i][_]
         _ += 1
     
@@ -85,7 +85,7 @@ def get_args(snippet, original=[]):
     if i == len(snippet):
         return original
 
-    while char_condition(snippet.lower(), i, "abcdefghijklmnopqrstuvwxyz0123456789."):
+    while char_condition(snippet.lower(), i, "abcdefghijklmnopqrstuvwxyz0123456789_."):
         instruction += snippet[i]
         i += 1
 
@@ -133,7 +133,7 @@ def run(snippet, variables, original=False, indentation=0, in_if=False):
         return Nothing()
 
     instruction = ""
-    while char_condition(snippet.lower(), i, "abcdefghijklmnopqrstuvwxyz0123456789"):
+    while char_condition(snippet.lower(), i, "abcdefghijklmnopqrstuvwxyz0123456789_"):
         instruction += snippet[i]
         i += 1
 
@@ -145,7 +145,7 @@ def run(snippet, variables, original=False, indentation=0, in_if=False):
     else:
         nexter = snippet[i]
 
-    if nexter.lower() in "abcdefghijklmnopqrstuvwxyz0123456789" and nexter.lower():
+    if nexter.lower() in "abcdefghijklmnopqrstuvwxyz0123456789_" and nexter.lower():
         nexter = " "
 
     match nexter:
@@ -238,7 +238,7 @@ def run(snippet, variables, original=False, indentation=0, in_if=False):
                     if var_name in variables:
                         # must use now
                         keyword = ""
-                        while char_condition(snippet.lower(), i, "abcdefghijklmnopqrstuvwxyz0123456789"):
+                        while char_condition(snippet.lower(), i, "abcdefghijklmnopqrstuvwxyz0123456789_"):
                             keyword += snippet[i]
                             i += 1
 
@@ -518,7 +518,7 @@ def run(snippet, variables, original=False, indentation=0, in_if=False):
                 
             var_name = ""
             i += 1
-            while char_condition(snippet.lower(), i, "abcdefghijklmnopqrstuvwxyz0123456789"):
+            while char_condition(snippet.lower(), i, "abcdefghijklmnopqrstuvwxyz0123456789_"):
                 var_name += snippet[i]
                 i += 1
 
