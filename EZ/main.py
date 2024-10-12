@@ -128,7 +128,7 @@ def run(snippet, variables, original=False, indentation=0, in_if=False):
     while char_condition(snippet, i, " "):
         i += 1
 
-    if original and snippet[0] == "$":
+    if original and snippet[i] == "$":
         # comment
         return Nothing()
 
