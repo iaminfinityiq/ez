@@ -513,6 +513,9 @@ def run(snippet, variables, original=False, indentation=0, in_if=False):
                     raise SyntaxError(f"Unexpected instruction '{instruction}'!")
         case "@":
             # retrieve variables value
+            if instruction:
+                raise SyntaxError("Before @ does not contain anything!")
+                
             var_name = ""
             i += 1
             while char_condition(snippet.lower(), i, "abcdefghijklmnopqrstuvwxyz0123456789"):
