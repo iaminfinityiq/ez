@@ -230,7 +230,7 @@ def run(snippet, variables, original=False, indentation=0, in_if=False):
                         i += 1
 
                     if keyword != "is":
-                        raise SyntaxError("Invalid syntax! The keyword for defining a variable is: <var_name> is (now must if your variable is defined else no) <value>")
+                        raise SyntaxError("Invalid syntax! The syntax for defining a variable is: <var_name> is (now must if your variable is defined else no) <value>")
 
                     while char_condition(snippet, i, " "):
                         i += 1
