@@ -145,7 +145,7 @@ def run(snippet, variables, original=False, indentation=0, in_if=False):
     else:
         nexter = snippet[i]
 
-    if nexter.lower() in VALIDS and nexter.lower():
+    if nexter.lower() in VALIDS:
         nexter = " "
 
     match nexter:
