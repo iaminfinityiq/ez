@@ -136,7 +136,7 @@ def run(snippet, variables, original=False, indentation=0, in_if=False):
     while char_condition(snippet.lower(), i, VALIDS):
         instruction += snippet[i]
         i += 1
-
+        
     while char_condition(snippet, i, " "):
         i += 1
 
@@ -230,7 +230,7 @@ def run(snippet, variables, original=False, indentation=0, in_if=False):
                         i += 1
 
                     if keyword != "is":
-                        raise SyntaxError("Invalid syntax! The syntax for defining a variable is: <var_name> is (now must if your variable is defined else no) <value>")
+                        raise SyntaxError("Invalid syntax! The keyword for defining a variable is: <var_name> is (now must if your variable is defined else no) <value>")
 
                     while char_condition(snippet, i, " "):
                         i += 1
@@ -516,15 +516,11 @@ def run(snippet, variables, original=False, indentation=0, in_if=False):
             if instruction:
                 raise SyntaxError("Before @ does not contain anything!")
                 
-            var_name = ""
             i += 1
-
             while char_condition(snippet, i, " "):
                 i += 1
             
-            while char_condition(snippet.lower(), i, VALIDS):
-                var_name += snippet[i]
-                i += 1
+            var_name = snippet[i:].strip()
 
             if var_name not in variables:
                 raise SyntaxError(f"Variable '{var_name}' not found!")
