@@ -225,7 +225,7 @@ def run(snippet, variables, original=False, indentation=0, in_if=False):
                 case _:
                     var_name = instruction
                     keyword = ""
-                    while char_condition(snippet.lower(), i, "abcdefghijklmjopqrstuvwxyz0123456789"):
+                    while char_condition(snippet.lower(), i, VALIDS):
                         keyword += snippet[i]
                         i += 1
 
