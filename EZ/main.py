@@ -254,6 +254,9 @@ def run(snippet, variables, original=False, indentation=0, in_if=False):
                         return Nothing()
 
                     args = get_args(snippet[i:])
+                    if len(args) != 1:
+                        raise ArgumentError("Can't assign multiple values to a variable!")
+                    
                     value = args[0]
                     variables.update({var_name: value})
         case "":
