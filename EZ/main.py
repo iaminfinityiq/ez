@@ -518,6 +518,10 @@ def run(snippet, variables, original=False, indentation=0, in_if=False):
                 
             var_name = ""
             i += 1
+
+            while char_condition(snippet, i, " "):
+                i += 1
+            
             while char_condition(snippet.lower(), i, VALIDS):
                 var_name += snippet[i]
                 i += 1
